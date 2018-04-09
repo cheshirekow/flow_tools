@@ -389,7 +389,10 @@ Subcommands have their own options. Use <command> -h or <command> --help to
 see specific help for each subcommand.
 """
 
-def main(argv):
+def main(argv=None):
+  if argv is None:
+    argv = sys.argv[1:]
+
   format_str = '%(filename)s:%(lineno)-3s: [%(levelname)-8s] %(message)s'
   logging.basicConfig(level=logging.INFO,
                       format=format_str,

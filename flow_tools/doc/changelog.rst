@@ -15,3 +15,9 @@ Initial public release.
   closed in a release
 * Utility to set the "Fix Version" for all issues that were closed between two
   releases.
+
+1.0.1
+=====
+
+* Fix wrapper script argv passing
+* Fix dependency on wrong enum package

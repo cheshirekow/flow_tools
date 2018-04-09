@@ -31,7 +31,7 @@ setup(
         'console_scripts': ['flow-tools=flow_tools.__main__:main'],
     },
     install_requires=[
-        'enum',
+        'enum34',
         'pygerrit2',
         'requests',
         'sqlalchemy',
