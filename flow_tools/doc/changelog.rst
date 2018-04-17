@@ -21,3 +21,14 @@ Initial public release.
 
 * Fix wrapper script argv passing
 * Fix dependency on wrong enum package
+
+1.0.2
+=====
+
+* Add missing dependency on jira
+
+1.0.3
+=====
+
+* Rename release-notes to changes-in-release and add a release-notes which
+  combines changes-in-release and issues-in-release

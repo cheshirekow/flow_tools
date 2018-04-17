@@ -32,10 +32,11 @@ setup(
     },
     install_requires=[
         'enum34',
+        'gitpython',
+        'jira',
         'pygerrit2',
         'requests',
         'sqlalchemy',
-        'gitpython'
     ]
 
 )

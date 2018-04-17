@@ -38,6 +38,18 @@ class Configuration(object):
       logging.warn("Unused config option: %s", key)
 
 
+def print_header(header, char=None):
+  """
+  Print a header with horizontal rule
+  """
+  if char is None:
+    char = '='
+
+  sys.stdout.write(header)
+  sys.stdout.write('\n')
+  sys.stdout.write(char*len(header))
+  sys.stdout.write('\n')
+
 def class_to_cmd(name):
   intermediate = re.sub('(.)([A-Z][a-z]+)', r'\1-\2', name)
   return re.sub('([a-z0-9])([A-Z])', r'\1-\2', intermediate).lower()
@@ -275,24 +287,24 @@ class IssuesInRelease(Command):
     for from_tag, to_tag in pairs:
       if args.release is not None and to_tag != args.release:
         continue
-      sys.stdout.write('{} -> {}'.format(from_tag, to_tag))
-      sys.stdout.write('\n')
+
+      print_header('{} -> {}'.format(from_tag, to_tag))
       issues = git_util.get_issues_closed_in_series(
           args.repo_path, from_tag, to_tag, config.gerrit_jira.tag_map)
       for issue in issues:
         try:
           issue_obj = jira_client.issue(issue, 'summary')
         except jira.JIRAError:
-          sys.stdout.write('  {}: N/A\n'.format(issue))
+          sys.stdout.write('{}: N/A\n'.format(issue))
           continue
 
         if args.url:
-          sys.stdout.write('  {}/browse/{}\n'
+          sys.stdout.write('{}/browse/{}\n'
                            .format(config.jira.auth['url'], issue))
           sys.stdout.write(wrapper.fill(issue_obj.fields.summary))
           sys.stdout.write('\n')
         else:
-          text = wrapper.fill('  {}: {}'
+          text = wrapper.fill('{}: {}'
                               .format(issue, issue_obj.fields.summary))
           sys.stdout.write(text)
           sys.stdout.write('\n')
@@ -319,8 +331,8 @@ class SetIssuesFixedInRelease(Command):
     for from_tag, to_tag in pairs:
       if args.release is not None and to_tag != args.release:
         continue
-      sys.stdout.write('{} -> {}'.format(from_tag, to_tag))
-      sys.stdout.write('\n')
+
+      print_header('{} -> {}'.format(from_tag, to_tag))
       issues = git_util.get_issues_closed_in_series(
           args.repo_path, from_tag, to_tag, config.gerrit_jira.tag_map)
       for issue in issues:
@@ -332,7 +344,7 @@ class SetIssuesFixedInRelease(Command):
           sys.stdout.write('  {}: failed (non-existant?)\n'.format(issue))
           continue
 
-class ReleaseNotes(Command):
+class ChangesInRelease(Command):
   """
   Show a list of commit message summaries for each commit in the series between
   one version and another.
@@ -351,16 +363,72 @@ class ReleaseNotes(Command):
     for from_tag, to_tag in pairs:
       if args.release is not None and to_tag != args.release:
         continue
-      header = '{} -> {}'.format(from_tag, to_tag)
-      sys.stdout.write(header)
-      sys.stdout.write('\n')
-      sys.stdout.write('-'*len(header))
-      sys.stdout.write('\n')
+      print_header('{} -> {}'.format(from_tag, to_tag))
       summaries = git_util.get_release_notes(args.repo_path, from_tag, to_tag)
       for summary in summaries:
         sys.stdout.write(summary)
         sys.stdout.write('\n')
 
+
+class ReleaseNotes(Command):
+  """
+  Combines issues-in-release and changes-in-release into a single output
+  """
+
+  @staticmethod
+  def setup_parser(parser):
+    parser.add_argument('repo_path', help='Path to the git repository')
+    parser.add_argument('release', nargs='?', default=None,
+                        help='If specified, show only this release')
+    parser.add_argument('--url', action='store_true', help='output as urls')
+
+  @classmethod
+  def run_args(cls, config, args):
+    import jira
+    jira_client = jira_util.get_jira(**config.jira.auth)
+    releases = git_util.get_releases(args.repo_path, config)
+    pairs = zip(releases[0:-1], releases[1:])
+    if args.url:
+      wrapper = textwrap.TextWrapper(width=80, initial_indent=' '*4,
+                                     subsequent_indent=' '*4)
+    else:
+      wrapper = textwrap.TextWrapper(width=80, initial_indent='',
+                                     subsequent_indent=' '*11)
+
+
+    for from_tag, to_tag in pairs:
+      if args.release is not None and to_tag != args.release:
+        continue
+      print_header('{} -> {}'.format(from_tag, to_tag))
+      sys.stdout.write('\n')
+      issues = git_util.get_issues_closed_in_series(
+          args.repo_path, from_tag, to_tag, config.gerrit_jira.tag_map)
+      summaries = git_util.get_release_notes(args.repo_path, from_tag, to_tag)
+
+      for issue in issues:
+        try:
+          issue_obj = jira_client.issue(issue, 'summary')
+        except jira.JIRAError:
+          sys.stdout.write('{}: N/A\n'.format(issue))
+          continue
+
+        if args.url:
+          sys.stdout.write('{}/browse/{}\n'
+                           .format(config.jira.auth['url'], issue))
+          sys.stdout.write(wrapper.fill(issue_obj.fields.summary))
+          sys.stdout.write('\n')
+        else:
+          text = wrapper.fill('{}: {}'
+                              .format(issue, issue_obj.fields.summary))
+          sys.stdout.write(text)
+          sys.stdout.write('\n')
+
+      if issues and summaries:
+        sys.stdout.write('\n')
+
+      for summary in summaries:
+        sys.stdout.write(summary)
+        sys.stdout.write('\n')
 
 
 def get_config(config_path):
