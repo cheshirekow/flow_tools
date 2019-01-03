@@ -304,7 +304,7 @@ class IssuesInRelease(Command):
           sys.stdout.write(wrapper.fill(issue_obj.fields.summary))
           sys.stdout.write('\n')
         else:
-          text = wrapper.fill('{}: {}'
+          text = wrapper.fill(u'{}: {}'
                               .format(issue, issue_obj.fields.summary))
           sys.stdout.write(text)
           sys.stdout.write('\n')
@@ -418,7 +418,7 @@ class ReleaseNotes(Command):
           sys.stdout.write(wrapper.fill(issue_obj.fields.summary))
           sys.stdout.write('\n')
         else:
-          text = wrapper.fill('{}: {}'
+          text = wrapper.fill(u'{}: {}'
                               .format(issue, issue_obj.fields.summary))
           sys.stdout.write(text)
           sys.stdout.write('\n')
